@@ -4,7 +4,7 @@ A simple desktop application built with PyQt5 to help Magic: The Gathering playe
 
 This tool automates the process of finding a commander, looking up budget decks on EDHRec, and exporting a text-based list for use in online simulators or deckbuilding tools.
 
-![App Screenshot](../assets/qtcommanderfinder.png)
+![App Screenshot](assets/qtcommanderfinder.png)
 
 ---
 
