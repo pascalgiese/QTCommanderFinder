@@ -1,3 +1,4 @@
+import os
 import sys
 import json
 
@@ -7,14 +8,25 @@ from PyQt5.QtCore import Qt, QThread, QObject, pyqtSignal
 import bs4
 import time
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QCheckBox, QLabel, QLineEdit, \
-    QPushButton, QLayout
-from PyQt5.QtGui import QPalette, QColor, QPixmap
+    QPushButton, QLayout, QMessageBox
+from PyQt5.QtGui import QPalette, QColor, QPixmap, QIcon
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from selenium_stealth import stealth
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        # In development, use the script's directory
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 
 class DecklistScraperWorker(QObject):
@@ -47,8 +59,8 @@ class DecklistScraperWorker(QObject):
 
         driver = webdriver.Chrome(options=options)
 
-        # Apply selenium-stealth to bypass bot detection like Cloudflare.
-        # Dies muss NACH der Initialisierung des Treibers, aber VOR dem ersten .get() Aufruf geschehen.
+        # Apply selenium-stealth to bypass bot detection like Cloudflare
+        # This must be done AFTER initializing the driver, but BEFORE the first .get() call.
         stealth(driver,
               languages=["en-US", "en"],
               vendor="Google Inc.",
@@ -57,7 +69,6 @@ class DecklistScraperWorker(QObject):
               renderer="Intel Iris OpenGL Engine",
               fix_hairline=True,
               )
-
         driver.get(self.url)
         try:
             if self.site == "moxfield":
@@ -100,12 +111,12 @@ class DecklistScraperWorker(QObject):
 
     def _scrape_archidekt(self, driver):
         """Scrapes an Archidekt decklist by parsing the embedded __NEXT_DATA__ JSON."""
-        # Wir warten kurz, um sicherzustellen, dass die Seite und das __NEXT_DATA__-Skript vollständig geladen sind.
+        # We wait a moment to ensure the page and the __NEXT_DATA__ script are fully loaded.
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, "__NEXT_DATA__"))
         )
 
-        # Hole den HTML-Quellcode der Seite
+        # Get the HTML source code of the page
         soup = bs4.BeautifulSoup(driver.page_source, 'html.parser')
         next_data_script = soup.find('script', {'id': '__NEXT_DATA__'})
 
@@ -115,20 +126,20 @@ class DecklistScraperWorker(QObject):
 
         data = json.loads(next_data_script.string)
 
-        # Navigiere durch die JSON-Struktur, um zur Kartenliste zu gelangen
-        # Korrekter Pfad und korrekte Datenstruktur (dict of dicts)
+        # Navigate through the JSON structure to get to the card list
+        # Correct path and correct data structure (dict of dicts)
         card_map = data.get('props', {}).get('pageProps', {}).get('redux', {}).get('deck', {}).get("cardMap", {})
 
         if not card_map:
             self.finished.emit("Error: Could not find card list (cardMap) in Archidekt's page data.")
             return
 
-        # Formatiere die Deckliste
+        # Format the decklist
         decklist_lines = []
-        # Da card_map ein Dictionary ist, iterieren wir über seine Werte.
+        # Since card_map is a dictionary, we iterate over its values.
         card_list = list(card_map.values())
 
-        # Sortiere die Karten nach Namen für eine konsistente Ausgabe
+        # Sort the cards by name for a consistent output
         sorted_cards = sorted(card_list, key=lambda c: c.get('name', ''))
 
         for card_item in sorted_cards:
@@ -151,26 +162,13 @@ class MainWindow(QMainWindow):
 
         #--- WINDOW SETTINGS ---#
         self.setWindowTitle("QTCommanderFinder")
-        self.setMinimumSize(400,600)
+        self.setMinimumSize(400, 600)
+        icon_path = resource_path(os.path.join("assets", "flash-cards.png"))
+        self.setWindowIcon(QIcon(icon_path))
 
         # --- THREADING ---#
         self.thread = None
         self.worker = None
-
-        # --- COLOR CHECKBOXES ---#
-        # self.colorsLabel = QLabel("Colors:")
-        # self.whiteManaButton = QCheckBox()
-        # self.whiteManaButton.setText("W")
-        # self.blueManaButton = QCheckBox()
-        # self.blueManaButton.setText("U")
-        # self.blackManaButton = QCheckBox()
-        # self.blackManaButton.setText("B")
-        # self.redManaButton = QCheckBox()
-        # self.redManaButton.setText("R")
-        # self.greenManaButton = QCheckBox()
-        # self.greenManaButton.setText("G")
-        # self.colorlessManaButton = QCheckBox()
-        # self.colorlessManaButton.setText("C")
 
         # --- TEXT SEARCH BAR ---#
         self.searchText = QLineEdit()
@@ -181,13 +179,6 @@ class MainWindow(QMainWindow):
 
         # --- SEARCHBAR LAYOUT ---#
         self.searchMenuLayout = QHBoxLayout()
-        # self.searchMenuLayout.addWidget(self.colorsLabel)
-        # self.searchMenuLayout.addWidget(self.whiteManaButton)
-        # self.searchMenuLayout.addWidget(self.blueManaButton)
-        # self.searchMenuLayout.addWidget(self.blackManaButton)
-        # self.searchMenuLayout.addWidget(self.redManaButton)
-        # self.searchMenuLayout.addWidget(self.greenManaButton)
-        # self.searchMenuLayout.addWidget(self.colorlessManaButton)
         self.searchMenuLayout.addWidget(self.searchText)
         self.searchMenuLayout.addWidget(self.searchButton)
 
@@ -214,7 +205,6 @@ class MainWindow(QMainWindow):
         self.actionLayout = QVBoxLayout()
         self.actionLayout.addWidget(self.get_Decklist)
         self.actionLayout.addWidget(self.deckPriceLabel)
-        self.actionLayout.setSizeConstraint(QLayout.SetFixedSize)
 
         #--- ERROR BOX ---#
         self.errorLabel = QLabel()
@@ -224,7 +214,6 @@ class MainWindow(QMainWindow):
         #--- ERROR BOX CONTAINER ---#
         self.errorLayout = QHBoxLayout()
         self.errorLayout.addWidget(self.errorLabel)
-        self.errorLayout.setSizeConstraint(QLayout.SetFixedSize)
 
         #--- FINAL LAYOUT ---#
         self.layout = QVBoxLayout()
@@ -244,13 +233,8 @@ class MainWindow(QMainWindow):
             "Accept": "application/json;q=0.9,*/*;q=0.8"
         }
 
-        # colors = ""
-        # for button in [self.whiteManaButton, self.blueManaButton, self.blackManaButton, self.redManaButton, self.greenManaButton, self.colorlessManaButton]:
-        #     if button.isChecked():
-        #         colors += button.text()
-
         query = f"{self.searchText.text()}"
-        # Füge "is:commander" hinzu, um nur legendäre Kreaturen zu finden, die als Commander legal sind.
+        # Add "is:commander" to find only legendary creatures that are legal as commanders.
         if "is:commander" not in query.lower():
             query += " is:commander"
 
@@ -262,11 +246,11 @@ class MainWindow(QMainWindow):
 
         try:
             response = requests.get(base_url, params=payload, headers=headers)
-            response.raise_for_status()  # Löst einen Fehler bei 4xx/5xx-Antworten aus
+            response.raise_for_status()  # Raises an error for 4xx/5xx responses
             json_data = response.json().get('data')
 
             if not json_data:
-                print("Keine Karten für diese Suche gefunden.")
+                print("No cards found for this search.")
                 self.commanderImage.setText("Commander not found.")
                 return
 
@@ -274,7 +258,7 @@ class MainWindow(QMainWindow):
             self.data['commander'] = commander
             image_uris = commander.get('image_uris')
             if not image_uris:
-                print("Keine Bild-URL für diese Karte gefunden.")
+                print("No image URL found for this card.")
                 return
 
             image_link = image_uris.get('png')
@@ -289,21 +273,21 @@ class MainWindow(QMainWindow):
             self.update_commander_image()
 
         except requests.exceptions.RequestException as e:
-            print(f"Fehler bei der API-Anfrage: {e}")
+            print(f"API request error: {e}")
             self.commanderImage.setText("Failed to load data.")
 
     def update_commander_image(self):
-        """Skaliert das Original-Pixmap und zeigt es im Label an."""
-        # Definiere die Mindesthöhe des Bild-Labels als 2/3 der Fensterhöhe.
-        # Dies stellt sicher, dass der Bereich für das Bild nicht zu klein wird.
+        """Scales the original pixmap and displays it in the label."""
+        # Define the minimum height of the image label as 2/3 of the window height.
+        # This ensures that the area for the image does not become too small.
         min_height = int(self.height() * (2 / 3))
         self.commanderImage.setMinimumHeight(min_height)
 
         if not self.original_commander_pixmap:
             return
 
-        # Skaliere das Bild auf die Größe des Labels, behalte das Seitenverhältnis bei.
-        # Die Größe des Labels wird durch das Layout bestimmt, respektiert aber die Mindesthöhe.
+        # Scale the image to the size of the label, keeping the aspect ratio.
+        # The size of the label is determined by the layout, but respects the minimum height.
         scaled_pixmap = self.original_commander_pixmap.scaled(
             self.commanderImage.size(),
             Qt.KeepAspectRatio,
@@ -313,7 +297,7 @@ class MainWindow(QMainWindow):
         self.commanderImage.setAlignment(Qt.AlignCenter)
 
     def resizeEvent(self, event):
-        """Wird aufgerufen, wenn das Fenster seine Größe ändert."""
+        """Called when the window is resized."""
         super().resizeEvent(event)
         self.update_commander_image()
 
@@ -324,11 +308,11 @@ class MainWindow(QMainWindow):
 
         edhrec_link = self.data["commander"].get("related_uris", {}).get("edhrec")
         if not edhrec_link:
-            print("Kein EDHRec Link hinterlegt.")
+            print("No EDHRec link found.")
             return
 
         try:
-            # Der Slug ist der letzte Teil der URL, z.B. "kaalia-of-the-vast"
+            # The slug is the last part of the URL, e.g., "kaalia-of-the-vast"
             response_edhrec = requests.get(edhrec_link)
             response_edhrec.raise_for_status()
 
@@ -339,7 +323,7 @@ class MainWindow(QMainWindow):
             response = requests.get(decks_site)
             response.raise_for_status()
 
-            # --- JSON-Daten aus dem __NEXT_DATA__ Skript-Tag extrahieren ---
+            # --- Extract JSON data from the __NEXT_DATA__ script tag ---
             soup = bs4.BeautifulSoup(response.text, 'html.parser')
             next_data_script = soup.find('script', {'id': '__NEXT_DATA__'})
 
@@ -354,7 +338,7 @@ class MainWindow(QMainWindow):
                 self.errorLabel.setText("No decks found in the data.")
                 return
 
-            # --- Budget-Filterung und Suche nach dem ersten passenden Deck ---
+            # --- Filter by budget and search for the first matching deck ---
             try:
                 budget_limit = float(self.price_limit.text()) if self.price_limit.text() else float('inf')
             except ValueError:
@@ -365,10 +349,10 @@ class MainWindow(QMainWindow):
             for deck in deck_table:
                 if deck.get('price', float('inf')) <= budget_limit:
                     first_deck_found = deck
-                    break  # Wir haben das erste passende Deck gefunden
+                    break  # We found the first matching deck
 
             if first_deck_found:
-                self.deckPriceLabel.setText(f"Deckliste gefunden für ${str(first_deck_found.get("price"))}")
+                self.deckPriceLabel.setText(f"Decklist found for ${str(first_deck_found.get('price'))}")
                 self.deckPriceLabel.setEnabled(True)
                 deck_url_hash = first_deck_found.get("urlhash")
                 deck_link = f"https://edhrec.com/deckpreview/{deck_url_hash}"
@@ -380,8 +364,8 @@ class MainWindow(QMainWindow):
 
 
         except requests.exceptions.RequestException as e:
-            print(f"Fehler bei der Anfrage: {e}")
-            self.errorLabel.setText("Kein valider EDHRec Link.")
+            print(f"Request error: {e}")
+            self.errorLabel.setText("Not a valid EDHRec link.")
 
     def copy_list_to_clipboard(self):
         deck_page = self.data.get("deck_page", "")
@@ -400,9 +384,10 @@ class MainWindow(QMainWindow):
 
             match deck_link:
                 case _ if "moxfield.com" in deck_link or "archidekt.com" in deck_link:
-                    # --- Selenium-basierter Ansatz ---
+                    # --- Selenium-based approach ---
                     self.get_Decklist.setEnabled(False)
                     site_name = "Moxfield" if "moxfield" in deck_link else "Archidekt"
+                    self.errorLabel.setStyleSheet(f"background-color: lightgrey; color: black; font-family: montserrat")
                     self.errorLabel.setText(f"Fetching from {site_name}...")
                     self.thread = QThread()
                     self.worker = DecklistScraperWorker(deck_link)
@@ -414,8 +399,8 @@ class MainWindow(QMainWindow):
                     self.errorLabel.setText(f"Unsupported site for scraping: {deck_link}")
 
         except requests.exceptions.RequestException as e:
-            print(f"Fehler bei der Anfrage: {e}")
-            self.errorLabel.setText("Kein valider Deck Link.")
+            print(f"Request error: {e}")
+            self.errorLabel.setText("Not a valid deck link.")
 
     def on_selenium_finished(self, decklist):
         """Handles the result from the Selenium worker thread."""
@@ -428,6 +413,17 @@ class MainWindow(QMainWindow):
         self.get_Decklist.setEnabled(True)
         self.thread.quit()
         self.thread.wait()
+
+    def closeEvent(self, a0):
+        reply = QMessageBox.question(self, 'Confirmation',
+                                     "Are you sure you want to quit?",
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            os.remove("commander.png")
+            a0.accept()
+        else:
+            a0.ignore()
 
 app = QApplication(sys.argv)
 window = MainWindow()
