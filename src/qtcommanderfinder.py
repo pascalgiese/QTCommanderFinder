@@ -79,12 +79,19 @@ class DecklistScraperWorker(QObject):
             else:
                 self.finished.emit(f"Error: Unsupported website for scraping: {self.url}")
 
-        except TimeoutException as e:
+        except TimeoutException as e: # Specific exception for timeouts
             error_message = f"Error: Timed out on {self.site.capitalize()}. Check selectors or page load."
             print(f"--- SELENIUM DEBUG: TIMEOUT ---")
             print(f"Error message: {e}")
             driver.save_screenshot(f"debug_screenshot_{self.site}.png")
             print(f"Screenshot saved to debug_screenshot_{self.site}.png")
+            self.finished.emit(error_message)
+        except Exception as e: # Catch-all for any other unexpected errors
+            error_message = f"An unexpected error occurred: {type(e).__name__}: {e}"
+            print(f"--- SELENIUM DEBUG: UNEXPECTED ERROR ---")
+            print(error_message)
+            driver.save_screenshot(f"debug_screenshot_unexpected_error.png")
+            print(f"Screenshot saved to debug_screenshot_unexpected_error.png")
             self.finished.emit(error_message)
         finally:
             driver.quit()
