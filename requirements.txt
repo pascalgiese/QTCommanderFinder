@@ -1,0 +1,9 @@
+PyQt5
+requests
+beautifulsoup4
+selenium
+selenium-stealth
+pyperclip
+pytest
+pytest-qt
+pytest-mock
