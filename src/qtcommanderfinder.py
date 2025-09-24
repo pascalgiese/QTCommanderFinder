@@ -273,9 +273,15 @@ class DecklistScraperWorker(QObject):
         for card_item in sorted_cards:
             quantity = card_item.get('qty')
             card_name = card_item.get('name')
+            set_code = card_item.get('setCode')
+            collector_no = card_item.get('collectorNumber')
+            categories = card_item.get('categories')
             if quantity and card_name:
-                if "Maybeboard" not in card_item.get('categories'):
-                    decklist_lines.append(f"{quantity} {card_name}")
+                if "Maybeboard" not in categories:
+                    if "Commander" in categories:
+                        decklist_lines.insert(0, f"{quantity} {card_name} ({set_code}) {collector_no}")
+                    else:
+                        decklist_lines.append(f"{quantity} {card_name} ({set_code}) {collector_no}")
 
         self.finished.emit("\n".join(decklist_lines))
 
@@ -950,6 +956,8 @@ class MainWindow(QMainWindow):
                 os.remove("commander_front.png")
             if os.path.isfile("partner.png"):
                 os.remove("partner.png")
+            if os.path.isfile("debug_screenshot_unexpected_error.png"):
+                os.remove("debug_screenshot_unexpected_error.png")
             a0.accept()
         else:
             a0.ignore()
