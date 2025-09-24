@@ -26,7 +26,7 @@ jobs:
       run: |
         # Install system dependencies for headless GUI testing
         sudo apt-get update
-        sudo apt-get install -y xvfb qtbase5-plugins libxkbcommon-x11-0
+        sudo apt-get install build-essential libgl1-mesa-dev
 
         python -m pip install --upgrade pip
         pip install flake8
