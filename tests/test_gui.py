@@ -6,7 +6,7 @@ import pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
 from qtcommanderfinder import MainWindow
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtCore import Qt
 
 # Mock-Antwort von der Scryfall-API
@@ -35,6 +35,10 @@ def test_search_success(app, qtbot, mocker):
     # Konfiguriere den Mock, um unsere Beispieldaten zurückzugeben
     mock_get.return_value.json.return_value = MOCK_SCRYFALL_RESPONSE
     mock_get.return_value.raise_for_status.return_value = None
+
+    # Mocke den "Bist du sicher?"-Dialog beim Schließen, um den Test nicht zu blockieren.
+    # Wir simulieren, dass der Nutzer immer "Ja" klickt.
+    mocker.patch('PyQt5.QtWidgets.QMessageBox.question', return_value=QMessageBox.Yes)
 
     # Mocke das Herunterladen des Bildes
     mocker.patch("urllib.request.urlretrieve")
