@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+# Standard names for virtual environments. Add your specific name if it's different.
+venv/
+.venv/
+env/
+.env/
+
+# PyInstaller
+# Distribution and build artifacts
+dist/
+build/
+*.spec
+
+# IDE and Editor Folders
+.idea/
+.vscode/
+
+# Application-specific temporary files
+# These are downloaded or created during runtime and should not be versioned.
+commander.png
+commander_front.png
+commander_back.png
+partner.png
+debug_screenshot*.png
+ExtrasButton.png
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+.pytest_cache/
