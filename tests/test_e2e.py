@@ -29,3 +29,21 @@ def test_moxfield_scraping():
     assert "Error" not in decklist
     assert "Korvold, Fae-Cursed King" in decklist
     assert "Arcane Signet" in decklist  # Eine häufige Karte zum Überprüfen
+
+@pytest.mark.slow
+def test_archidekt_scraping():
+    """Testet den kompletten Archidekt-Scraping-Prozess."""
+    # Eine bekannte, einfache Deckliste
+    archidekt_url = "https://archidekt.com/decks/15774747/kaalia_paper"
+
+    worker = DecklistScraperWorker(archidekt_url)
+
+    result = []
+    worker.finished.connect(lambda text: result.append(text))
+    worker.run()
+
+    assert len(result) == 1
+    decklist = result[0]
+    assert "Error" not in decklist
+    assert "Kaalia of the Vast" in decklist
+    assert "Sol Ring" in decklist

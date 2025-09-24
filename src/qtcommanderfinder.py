@@ -237,7 +237,14 @@ class DecklistScraperWorker(QObject):
             EC.visibility_of_element_located((By.CLASS_NAME, "form-control"))
         )
         decklist = textarea.get_attribute('value')
-        self.finished.emit(decklist)
+        decklist = decklist.split("\n")
+        prettified_decklist = ""
+        for card in decklist:
+            if "/" in card:
+                card_parts = card.split("(")
+                card = card_parts[0].split("/")[0] + "(" + card_parts[1]
+            prettified_decklist += card + "\n"
+        self.finished.emit(prettified_decklist)
 
     def _scrape_archidekt(self, driver):
         """Scrapes an Archidekt decklist by parsing the embedded __NEXT_DATA__ JSON."""
@@ -267,7 +274,8 @@ class DecklistScraperWorker(QObject):
             quantity = card_item.get('qty')
             card_name = card_item.get('name')
             if quantity and card_name:
-                decklist_lines.append(f"{quantity} {card_name}")
+                if "Maybeboard" not in card_item.get('categories'):
+                    decklist_lines.append(f"{quantity} {card_name}")
 
         self.finished.emit("\n".join(decklist_lines))
 
