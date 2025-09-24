@@ -176,7 +176,11 @@ class DecklistScraperWorker(QObject):
         """The long-running task."""
         # --- Driver Setup ---
         options = webdriver.ChromeOptions()
-        options.add_argument("--headless") # Run in background without opening a window
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")  # Absolutely necessary for running as root/in a container
+        options.add_argument("--disable-dev-shm-usage")  # Overcomes limited resource problems
+        options.add_argument("--disable-gpu")  # Applicable to headless browser
+        options.add_argument("--remote-debugging-port=9222") # Optional, but can improve stability
         options.add_argument("start-maximized")
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option('useAutomationExtension', False)
