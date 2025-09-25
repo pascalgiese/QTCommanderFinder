@@ -1,9 +1,5 @@
 import pytest
-import sys
 from unittest.mock import MagicMock, patch
-
-# Ensure the src directory is on the Python path for imports
-sys.path.insert(0, str(pytest.project_root / "src"))
 
 @pytest.fixture(scope="session")
 def qapp():
@@ -72,8 +68,3 @@ def mock_selenium_driver(mocker):
     mocker.patch("selenium.webdriver.Chrome", return_value=mock_driver)
 
     yield mock_driver
-
-
-def pytest_configure(config):
-    # Add project_root to config for easy access in fixtures
-    config.project_root = config.rootpath
