@@ -54,9 +54,9 @@ def mock_selenium_driver(mocker):
     mock_wait = MagicMock()
     mock_wait.until.return_value = mock_element # For element_to_be_clickable, visibility_of_element_located
     mocker.patch("selenium.webdriver.support.ui.WebDriverWait", return_value=mock_wait)
-    mocker.patch("selenium.webdriver.support.expected_conditions.element_to_be_clickable", return_value=True)
-    mocker.patch("selenium.webdriver.support.expected_conditions.visibility_of_element_located", return_value=True)
-    mocker.patch("selenium.webdriver.support.expected_conditions.presence_of_element_located", return_value=True)
+    mocker.patch("selenium.webdriver.support.expected_conditions.element_to_be_clickable", return_value=lambda _: True)
+    mocker.patch("selenium.webdriver.support.expected_conditions.visibility_of_element_located", return_value=lambda _: True)
+    mocker.patch("selenium.webdriver.support.expected_conditions.presence_of_element_located", return_value=lambda _: True)
 
     # Mock BeautifulSoup for Archidekt scraping
     mock_soup = MagicMock()
