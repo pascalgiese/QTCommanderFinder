@@ -35,7 +35,11 @@ def mock_selenium_driver(mocker):
     """
     Mocks selenium.webdriver.Chrome and its common methods.
     """
-    mock_driver = MagicMock()
+    # Import Chrome here to use it for the spec
+    from selenium.webdriver import Chrome
+
+    # Create a mock that passes isinstance(..., Chrome) checks
+    mock_driver = MagicMock(spec=Chrome)
     mock_driver.get.return_value = None
     mock_driver.quit.return_value = None
     mock_driver.save_screenshot.return_value = None
@@ -65,6 +69,6 @@ def mock_selenium_driver(mocker):
     mocker.patch("selenium_stealth.stealth")
 
     # Patch webdriver.Chrome directly
-    mocker.patch("selenium.webdriver.Chrome", return_value=mock_driver)
+    mocker.patch("selenium.webdriver.Chrome", return_value=mock_driver, autospec=True)
 
     yield mock_driver
