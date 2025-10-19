@@ -8,7 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from selenium_stealth import stealth
 
-from src.config.constants import DEBUG_SCREENSHOT_PATH_TPL, DEBUG_SCREENSHOT_UNEXPECTED_ERROR_PATH
+from config.constants import DEBUG_SCREENSHOT_PATH_TPL, DEBUG_SCREENSHOT_UNEXPECTED_ERROR_PATH
 
 
 class DecklistScraperWorker(QObject):

@@ -14,15 +14,15 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHB
     QPushButton, QMessageBox, QGridLayout
 from PyQt5.QtGui import QPixmap, QIcon
 
-from src.config.constants import (
+from config.constants import (
     EDHREC_TAGS, COMMANDER_IMG_PATH, COMMANDER_FRONT_IMG_PATH, COMMANDER_BACK_IMG_PATH, PARTNER_IMG_PATH,
     SCRYFALL_API_CARD_SEARCH_URL, SCRYFALL_API_CARD_RANDOM_URL, HTTP_HEADERS, EDHREC_PARTNERS_URL_TPL,
     EDHREC_DECKS_URL_TPL, EDHREC_DECK_PREVIEW_URL_TPL, SCRYFALL_SYNTAX_GUIDE_URL, DEBUG_SCREENSHOT_UNEXPECTED_ERROR_PATH
 )
-from src.scraping.scraper_worker import DecklistScraperWorker
-from src.ui.completer import MultiTagCompleter
-from src.utils.deck_filter import filter_decks
-from src.utils.file_helpers import resource_path
+from scraping.scraper_worker import DecklistScraperWorker
+from ui.completer import MultiTagCompleter
+from utils.deck_filter import filter_decks
+from utils.file_helpers import resource_path
 
 
 class MainWindow(QMainWindow):

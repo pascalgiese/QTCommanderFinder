@@ -32,12 +32,14 @@ jobs:
 
       - name: Build with PyInstaller
         run: |
-          cd src
-          pyinstaller --onefile --windowed --icon="../assets/flash-cards.png" --add-data "../assets;assets" --additional-hooks-dir "./hooks" --hidden-import sip qtcommanderfinder.py
+          # Run from the project root. We use "--paths ." to add the project root
+          # to PyInstaller's search path. This allows it to correctly find the 'src'
+          # module for imports like 'from src.ui...'.
+          pyinstaller --onefile --windowed --icon="assets/flash-cards.png" --add-data "assets;assets" --paths . --additional-hooks-dir "src/hooks" --hidden-import sip src/qtcommanderfinder.py
 
       - name: Create Release and Upload Asset
         uses: softprops/action-gh-release@v2
         with:
           # The action will automatically use your tag name (e.g., "v1.0.1") as the release title
           # and the commit messages since the last tag as the release body.
-          files: src/dist/qtcommanderfinder.exe
+          files: dist/qtcommanderfinder.exe
