@@ -71,6 +71,9 @@ class MainWindow(QMainWindow):
         self.tags_input = QLineEdit()
         self.tags_input.setPlaceholderText("Filter by tags (e.g. counters, budget)")
 
+        self.salt_input = QLineEdit()
+        self.salt_input.setPlaceholderText("Filter by salt score (e.g. <30 or 30-40")
+
         # --- TAG COMPLETION ---
         completer = MultiTagCompleter(EDHREC_TAGS, self)
         completer.setCaseSensitivity(Qt.CaseInsensitive)
@@ -89,8 +92,9 @@ class MainWindow(QMainWindow):
         self.extendedSearchLayout.setSpacing(5)
         self.extendedSearchLayout.addWidget(self.price_limit, 0, 0)
         self.extendedSearchLayout.addWidget(self.tags_input, 0, 1)
-        self.extendedSearchLayout.addWidget(self.partnerSearch, 0, 2)
-        self.extendedSearchLayout.addWidget(self.helpButton, 0, 3)
+        self.extendedSearchLayout.addWidget(self.salt_input, 0, 2)
+        self.extendedSearchLayout.addWidget(self.partnerSearch, 0, 3)
+        self.extendedSearchLayout.addWidget(self.helpButton, 0, 4)
         self.extendedSearchLayout.addWidget(self.budget_hint, 1, 0, 1, 4, Qt.AlignTop)
 
         #--- IMAGE WIDGETS ---#
@@ -239,6 +243,7 @@ class MainWindow(QMainWindow):
 
             commander = json_data[0]
             self.data['commander'] = commander
+            self._set_status("Commander found.")
 
             if self.partnerSearch.isChecked():
                 if not self._handle_partner_search(commander):
@@ -248,7 +253,6 @@ class MainWindow(QMainWindow):
                     return
 
             self.update_commander_image()
-            self._set_status("Commander found.")
 
         except requests.exceptions.RequestException as e:
             self._set_status(f"API request error: {e}", is_error=True)
@@ -361,6 +365,11 @@ class MainWindow(QMainWindow):
         self.partnerImage.setMinimumHeight(min_height)
 
         if self.original_commander_pixmap:
+            # In a test environment, widget height might be 0 initially.
+            # Use the window's minimum height calculation as a reliable fallback.
+            target_height = self.commanderImage.height()
+            if target_height <= 0:
+                target_height = min_height
             scaled_pixmap = self.original_commander_pixmap.scaledToHeight(
                 self.commanderImage.height(),
                 Qt.SmoothTransformation
@@ -457,12 +466,17 @@ class MainWindow(QMainWindow):
 
             budget_query = self.price_limit.text().strip()
             tags_query = self.tags_input.text().strip().lower()
+            salt_query = self.salt_input.text().strip()
 
-            first_deck_found = filter_decks(deck_table, budget_query, tags_query)
+
+            first_deck_found = filter_decks(deck_table, budget_query, tags_query, salt_query)
 
             if first_deck_found:
                 price = first_deck_found.get('price')
-                self.deckPriceLabel.setText(f"Decklist found for ${price}")
+                tags = first_deck_found.get('tags')
+                if tags == []: tags = "[No tags]"
+                salt = round(first_deck_found.get('salt'), 2)
+                self.deckPriceLabel.setText(f"Decklist found for ${price} with the tags {tags} and salt score {salt}")
                 self.deckPriceLabel.setEnabled(True)
 
                 deck_url_hash = first_deck_found.get("urlhash")

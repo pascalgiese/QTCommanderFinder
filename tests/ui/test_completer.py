@@ -10,6 +10,7 @@ def completer_setup(qapp):
     model = QStringListModel(["tag1", "tag2", "long tag", "another tag"])
     completer = MultiTagCompleter(model)
     line_edit = QLineEdit()
+    completer.setModel(model)
     completer.setWidget(line_edit)
     return completer, line_edit
 

@@ -9,6 +9,12 @@ def qapp():
     yield app
     app.quit()
 
+@pytest.fixture(autouse=True)
+def disable_qmessagebox_confirmation(mocker):
+    """Automatically clicks 'Yes' on confirmation dialogs during tests."""
+    from PyQt5.QtWidgets import QMessageBox
+    mocker.patch.object(QMessageBox, 'question', return_value=QMessageBox.Yes)
+
 @pytest.fixture
 def mock_requests_get(mocker):
     """
@@ -28,7 +34,21 @@ def mock_urllib_urlretrieve(mocker):
     """
     Mocks urllib.request.urlretrieve to prevent actual file downloads.
     """
-    mocker.patch("urllib.request.urlretrieve")
+    return mocker.patch("urllib.request.urlretrieve")
+
+@pytest.fixture
+def mock_qpixmap(mocker):
+    """
+    Mocks PyQt5.QtGui.QPixmap to prevent file I/O errors in tests when
+    image files don't actually exist. It returns a mock pixmap that
+    reports itself as non-null.
+    """
+    # Create a real, tiny, valid QPixmap in memory.
+    # This satisfies all type checks of Qt methods like setPixmap.
+    from PyQt5.QtGui import QPixmap as RealQPixmap
+
+    # Return a new dummy pixmap on each call to simulate loading different images.
+    return mocker.patch("src.ui.main_window.QPixmap", side_effect=lambda *args, **kwargs: RealQPixmap(1, 1))
 
 @pytest.fixture
 def mock_selenium_driver(mocker):
@@ -57,13 +77,6 @@ def mock_selenium_driver(mocker):
     mocker.patch("selenium.webdriver.support.expected_conditions.element_to_be_clickable", return_value=lambda _: mock_element)
     mocker.patch("selenium.webdriver.support.expected_conditions.visibility_of_element_located", return_value=lambda _: mock_element)
     mocker.patch("selenium.webdriver.support.expected_conditions.presence_of_element_located", return_value=lambda _: mock_element)
-
-    # Mock BeautifulSoup for Archidekt scraping
-    mock_soup = MagicMock()
-    mock_script_tag = MagicMock()
-    mock_script_tag.string = '{"props": {"pageProps": {"redux": {"deck": {"cardMap": {"1": {"qty": 1, "name": "Card A", "setCode": "SET", "collectorNumber": "1", "categories": []}}}}}}}}'
-    mock_soup.find.return_value = mock_script_tag
-    mocker.patch("bs4.BeautifulSoup", return_value=mock_soup)
 
     # Mock selenium_stealth
     mocker.patch("selenium_stealth.stealth")

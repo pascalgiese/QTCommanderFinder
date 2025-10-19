@@ -45,7 +45,7 @@ def test_scrape_moxfield_success(worker_thread, mock_selenium_driver, qtbot):
 
     worker_thread.started.connect(worker.run)
     worker_thread.start()
-    qtbot.wait_for(lambda: len(result) > 0, timeout=5000)
+    qtbot.waitUntil(lambda: len(result) > 0, timeout=5000)
 
     assert result[0] == "1 Card A\n2 Card B"
     mock_selenium_driver.execute_script.call_count == 2 # For more_button and export_link
@@ -56,16 +56,16 @@ def test_scrape_archidekt_success(worker_thread, mock_selenium_driver, qtbot):
     worker = DecklistScraperWorker("https://archidekt.com/decks/test")
     worker.moveToThread(worker_thread)
 
-    # Configure mock_selenium_driver's BeautifulSoup to return specific data
-    mock_selenium_driver.page_source = '<html><body><script id="__NEXT_DATA__">{"props": {"pageProps": {"redux": {"deck": {"cardMap": {"1": {"qty": 1, "name": "Card A", "setCode": "SET", "collectorNumber": "1", "categories": []}, "2": {"qty": 2, "name": "Card B", "setCode": "SET", "collectorNumber": "2", "categories": ["Commander"]}}}}}}}}</script></body></html>'
-    mock_selenium_driver.find_element.return_value = MagicMock() # For __NEXT_DATA__ presence check
+    # Configure the mock driver to return a page source containing the JSON data
+    json_data = '{"props": {"pageProps": {"redux": {"deck": {"cardMap": {"1": {"qty": 1, "name": "Card A", "setCode": "SET", "collectorNumber": "1", "categories": []}, "2": {"qty": 2, "name": "Card B", "setCode": "SET", "collectorNumber": "2", "categories": ["Commander"]}}}}}}}'
+    mock_selenium_driver.page_source = f'<html><body><script id="__NEXT_DATA__">{json_data}</script></body></html>'
 
     result = []
     worker.finished.connect(result.append)
 
     worker_thread.started.connect(worker.run)
     worker_thread.start()
-    qtbot.wait_for(lambda: len(result) > 0, timeout=5000)
+    qtbot.waitUntil(lambda: len(result) > 0, timeout=5000)
 
     expected_decklist = "2 Card B (SET) 2\n1 Card A (SET) 1" # Commander first, then sorted
     assert result[0] == expected_decklist
